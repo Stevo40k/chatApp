@@ -1,0 +1,10 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../dist/server",
+    "rootDir": ".",
+    "moduleResolution": "node",
+    "lib": ["ESNext"]
+  },
+  "include": ["src/**/*", "knexfile.ts", "migrations/**/*"]
+}
