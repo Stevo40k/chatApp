@@ -1,4 +1,4 @@
-import { httpServer } from './index';
+import { httpServer } from './index.js';
 
 const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, () => {

@@ -11,6 +11,7 @@ const config: { [key: string]: Knex.Config } = {
     },
     migrations: {
       directory: './migrations',
+      loadExtensions: ['.js'],
     },
   },
 };

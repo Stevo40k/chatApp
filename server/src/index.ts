@@ -2,8 +2,8 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
-import db from './db';
-import invitesRouter from './invites';
+import db from './db.js';
+import invitesRouter from './invites.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -22,6 +22,56 @@ app.use('/api', invitesRouter);
 // Health check
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
+});
+
+let defaultRoomId: string;
+let defaultUserId: string;
+
+async function seedDefaultData() {
+  const maxRetries = 5;
+  let retries = 0;
+
+  while (retries < maxRetries) {
+    try {
+      console.log('Seeding default data...');
+      let user = await db('users').where({ username: 'System' }).first();
+      if (!user) {
+        const [newUser] = await db('users').insert({ username: 'System' }).returning('*');
+        user = newUser;
+      }
+      defaultUserId = user.id;
+
+      let room = await db('rooms').where({ name: 'General' }).first();
+      if (!room) {
+        const [newRoom] = await db('rooms').insert({ name: 'General', owner_id: defaultUserId }).returning('*');
+        room = newRoom;
+      }
+      defaultRoomId = room.id;
+      console.log(`Default Room ID: ${defaultRoomId}`);
+      return;
+    } catch (error) {
+      retries++;
+      console.error(`Failed to seed default data (attempt ${retries}/${maxRetries}):`, error);
+      if (retries < maxRetries) {
+        console.log('Retrying in 2 seconds...');
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+      }
+    }
+  }
+  console.error('Max retries reached. Seeding failed.');
+}
+
+// Don't call seedDefaultData here, we'll wait for it in main.ts if possible, 
+// or just provide it as an export that can be awaited.
+// For now, let's keep it here but export the promise.
+const seedPromise = seedDefaultData();
+
+app.get('/api/config', async (req, res) => {
+  await seedPromise;
+  if (!defaultRoomId || !defaultUserId) {
+    return res.status(503).json({ error: 'System is initializing or failed to seed data' });
+  }
+  res.json({ defaultRoomId, defaultUserId });
 });
 
 // Basic Room API
@@ -51,21 +101,30 @@ app.get('/api/rooms/:id', async (req, res) => {
 
 // Socket.io logic
 io.on('connection', (socket) => {
+  console.log(`Socket connected: ${socket.id}`);
+
   socket.on('join-room', (roomId) => {
+    console.log(`Socket ${socket.id} joining room: ${roomId}`);
     socket.join(roomId);
   });
 
   socket.on('send-message', async (data) => {
     const { room_id, user_id, content } = data;
+    console.log(`Message received for room ${room_id} from user ${user_id}`);
     try {
       const [message] = await db('messages')
         .insert({ room_id, user_id, content })
         .returning('*');
       
+      console.log(`Message saved and emitting: ${message.id}`);
       io.to(room_id).emit('new-message', message);
     } catch (error) {
       console.error('Failed to save message:', error);
     }
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`Socket disconnected: ${socket.id}`);
   });
 });
 

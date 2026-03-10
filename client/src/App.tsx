@@ -14,17 +14,32 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [username, setUsername] = useState('User_' + Math.floor(Math.random() * 1000));
-  const [roomId, setRoomId] = useState('default-room');
+  const [roomId, setRoomId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('invite');
-    if (token) {
-      validateInvite(token);
-    }
+    const fetchConfig = async () => {
+      try {
+        const res = await fetch('/api/config');
+        const data = await res.json();
+        
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('invite');
+        if (token) {
+          await validateInvite(token);
+        } else {
+          setRoomId(data.defaultRoomId);
+        }
+        setUserId(data.defaultUserId);
+      } catch (err) {
+        setError('Failed to load application configuration');
+      }
+    };
+
+    fetchConfig();
   }, []);
 
   const validateInvite = async (token: string) => {
@@ -43,6 +58,8 @@ function App() {
   };
 
   useEffect(() => {
+    if (!roomId) return;
+
     const newSocket = io();
     setSocket(newSocket);
 
@@ -63,10 +80,10 @@ function App() {
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (socket && input.trim()) {
+    if (socket && input.trim() && roomId && userId) {
       socket.emit('send-message', {
         room_id: roomId,
-        user_id: username,
+        user_id: userId,
         content: input,
       });
       setInput('');
@@ -74,6 +91,7 @@ function App() {
   };
 
   const createInvite = async () => {
+    if (!roomId) return;
     try {
       const res = await fetch(`/api/rooms/${roomId}/invites`, {
         method: 'POST',
@@ -86,18 +104,22 @@ function App() {
         setInviteToken(url);
         navigator.clipboard.writeText(url);
         alert('Invite link copied to clipboard!');
+      } else {
+        alert('Failed to create invite');
       }
     } catch (err) {
-      alert('Failed to create invite');
+      alert('Error creating invite');
     }
   };
+
+  if (!roomId) return <div>Loading...</div>;
 
   return (
     <div className="chat-app">
       <header>
         <h1>Chat App</h1>
         <div className="room-info">
-          Room: {roomId} | User: {username}
+          Room: {roomId.substring(0, 8)}... | User: {username}
           <button onClick={createInvite} className="invite-btn">Invite Friends</button>
         </div>
         {error && <div className="error-banner">{error}</div>}
@@ -106,8 +128,8 @@ function App() {
       
       <div className="messages-container">
         {messages.map((msg) => (
-          <div key={msg.id} className={`message ${msg.user_id === username ? 'own' : ''}`}>
-            <span className="user">{msg.user_id}:</span>
+          <div key={msg.id} className={`message ${msg.user_id === userId ? 'own' : ''}`}>
+            <span className="user">{msg.user_id === userId ? 'Me' : 'Others'}:</span>
             <span className="content">{msg.content}</span>
           </div>
         ))}

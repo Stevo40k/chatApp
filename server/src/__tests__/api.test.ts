@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import request from 'supertest';
-import { app } from '../index';
-import db from '../db';
+import { app } from '../index.js';
+import db from '../db.js';
 
 // Mock DB
 vi.mock('../db', () => {

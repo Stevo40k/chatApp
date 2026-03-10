@@ -36,6 +36,9 @@ This file tracks the development progress of the Simple Chat App, as defined in 
 - [x] Create Dockerfile for Frontend.
 - [x] Finalize `docker-compose.yml` for the entire stack.
 - [x] Verify local deployment.
+    - [x] Fixed issue where migrations were not running in container.
+    - [x] Improved database connection robustness and seeding logic.
+    - [x] Added logging for WebSocket troubleshooting.
 
 ## Phase 6: Final Testing & Quality Assurance
 - [ ] Verify 80% unit test coverage across the project.

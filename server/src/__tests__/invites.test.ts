@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateInviteToken } from '../invites';
+import { generateInviteToken } from '../invites.js';
 
 describe('Invite logic', () => {
   it('should generate a 64-character hex string', () => {

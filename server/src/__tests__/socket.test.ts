@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterAll } from 'vitest';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import { io as Client, Socket } from 'socket.io-client';
-import { app, io } from '../index';
-import db from '../db';
+import { app, io } from '../index.js';
+import db from '../db.js';
 
 // Mock DB
 vi.mock('../db', () => {
