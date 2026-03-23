@@ -1,12 +1,11 @@
 import { defineConfig } from 'vitest/config';
-import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  plugins: [react()],
   test: {
     globals: true,
     environment: 'node',
-    pool: 'threads',
+    pool: 'forks',
+    exclude: ['**/node_modules/**', '**/dist/**', '**/tests-e2e/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

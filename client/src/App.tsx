@@ -135,56 +135,64 @@ function App() {
     }
   };
 
-  if (!roomId) return <div>Loading...</div>;
+  if (!roomId && !error) return <div>Loading...</div>;
 
   return (
     <div className="chat-app">
       <header>
         <h1>Chat App</h1>
-        <div className="room-info">
-          <span>Room: {roomId.substring(0, 8)}...</span>
-          <div className="user-settings">
-            {isEditingUsername ? (
-              <>
-                <input 
-                  value={tempUsername} 
-                  onChange={(e) => setTempUsername(e.target.value)}
-                  className="username-input"
-                />
-                <button onClick={handleUsernameSave}>Save</button>
-              </>
-            ) : (
-              <>
-                <span className="username-display" onClick={() => setIsEditingUsername(true)}>
-                  User: {username} ✎
-                </span>
-              </>
-            )}
+        {roomId && (
+          <div className="room-info">
+            <span>Room: {roomId.substring(0, 8)}...</span>
+            <div className="user-settings">
+              {isEditingUsername ? (
+                <>
+                  <input 
+                    value={tempUsername} 
+                    onChange={(e) => setTempUsername(e.target.value)}
+                    className="username-input"
+                  />
+                  <button onClick={handleUsernameSave}>Save</button>
+                </>
+              ) : (
+                <>
+                  <span className="username-display" onClick={() => setIsEditingUsername(true)}>
+                    User: {username} ✎
+                  </span>
+                </>
+              )}
+            </div>
+            <button onClick={createInvite} className="invite-btn">Invite Friends</button>
           </div>
-          <button onClick={createInvite} className="invite-btn">Invite Friends</button>
-        </div>
+        )}
         {error && <div className="error-banner">{error}</div>}
         {inviteToken && <div className="invite-success">Link: {inviteToken}</div>}
       </header>
       
-      <div className="messages-container">
-        {messages.map((msg) => (
-          <div key={msg.id} className={`message ${msg.user_id === userId ? 'own' : 'other'}`}>
-            <span className="user-name">{msg.user_id === userId ? 'Me' : msg.username}</span>
-            <span className="content">{msg.content}</span>
+      {roomId ? (
+        <>
+          <div className="messages-container">
+            {messages.map((msg) => (
+              <div key={msg.id} className={`message ${msg.user_id === userId ? 'own' : 'other'}`}>
+                <span className="user-name">{msg.user_id === userId ? 'Me' : msg.username}</span>
+                <span className="content">{msg.content}</span>
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
           </div>
-        ))}
-        <div ref={messagesEndRef} />
-      </div>
 
-      <form onSubmit={sendMessage} className="input-area">
-        <input 
-          value={input} 
-          onChange={(e) => setInput(e.target.value)} 
-          placeholder="Type a message..."
-        />
-        <button type="submit">Send</button>
-      </form>
+          <form onSubmit={sendMessage} className="input-area">
+            <input 
+              value={input} 
+              onChange={(e) => setInput(e.target.value)} 
+              placeholder="Type a message..."
+            />
+            <button type="submit">Send</button>
+          </form>
+        </>
+      ) : (
+        <div className="no-room">Please use a valid invite link or wait for initialization.</div>
+      )}
     </div>
   );
 }
