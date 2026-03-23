@@ -109,11 +109,11 @@ io.on('connection', (socket) => {
   });
 
   socket.on('send-message', async (data) => {
-    const { room_id, user_id, content } = data;
-    console.log(`Message received for room ${room_id} from user ${user_id}`);
+    const { room_id, user_id, username, content } = data;
+    console.log(`Message received for room ${room_id} from user ${user_id} (${username})`);
     try {
       const [message] = await db('messages')
-        .insert({ room_id, user_id, content })
+        .insert({ room_id, user_id, username, content })
         .returning('*');
       
       console.log(`Message saved and emitting: ${message.id}`);

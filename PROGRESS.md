@@ -45,5 +45,11 @@ This file tracks the development progress of the Simple Chat App, as defined in 
 - [ ] Perform manual end-to-end testing.
 - [ ] Finalize documentation (README.md).
 
+## Phase 7: UI/UX Improvements
+- [ ] Distinguish between current user and others in Chat UI.
+    - [ ] Add unique username selection or generation.
+    - [ ] Update message bubbles to show correct usernames.
+    - [ ] Style "Me" vs "Others" messages differently.
+
 ---
 *Last Updated: 2026-03-09*

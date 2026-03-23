@@ -5,6 +5,7 @@ interface Message {
   id: string;
   room_id: string;
   user_id: string;
+  username: string;
   content: string;
   created_at?: string;
 }
@@ -14,6 +15,8 @@ function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [username, setUsername] = useState('User_' + Math.floor(Math.random() * 1000));
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
+  const [tempUsername, setTempUsername] = useState(username);
   const [roomId, setRoomId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [inviteToken, setInviteToken] = useState<string | null>(null);
@@ -33,7 +36,18 @@ function App() {
         } else {
           setRoomId(data.defaultRoomId);
         }
-        setUserId(data.defaultUserId);
+        
+        // Generate a unique userId for this session if not already set
+        // In a real app, this would come from an auth session or be persisted
+        const sessionUserId = localStorage.getItem('chat_userId') || 'user_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('chat_userId', sessionUserId);
+        setUserId(sessionUserId);
+
+        const savedUsername = localStorage.getItem('chat_username');
+        if (savedUsername) {
+          setUsername(savedUsername);
+          setTempUsername(savedUsername);
+        }
       } catch (err) {
         setError('Failed to load application configuration');
       }
@@ -84,9 +98,18 @@ function App() {
       socket.emit('send-message', {
         room_id: roomId,
         user_id: userId,
+        username: username,
         content: input,
       });
       setInput('');
+    }
+  };
+
+  const handleUsernameSave = () => {
+    if (tempUsername.trim()) {
+      setUsername(tempUsername);
+      localStorage.setItem('chat_username', tempUsername);
+      setIsEditingUsername(false);
     }
   };
 
@@ -119,7 +142,25 @@ function App() {
       <header>
         <h1>Chat App</h1>
         <div className="room-info">
-          Room: {roomId.substring(0, 8)}... | User: {username}
+          <span>Room: {roomId.substring(0, 8)}...</span>
+          <div className="user-settings">
+            {isEditingUsername ? (
+              <>
+                <input 
+                  value={tempUsername} 
+                  onChange={(e) => setTempUsername(e.target.value)}
+                  className="username-input"
+                />
+                <button onClick={handleUsernameSave}>Save</button>
+              </>
+            ) : (
+              <>
+                <span className="username-display" onClick={() => setIsEditingUsername(true)}>
+                  User: {username} ✎
+                </span>
+              </>
+            )}
+          </div>
           <button onClick={createInvite} className="invite-btn">Invite Friends</button>
         </div>
         {error && <div className="error-banner">{error}</div>}
@@ -128,8 +169,8 @@ function App() {
       
       <div className="messages-container">
         {messages.map((msg) => (
-          <div key={msg.id} className={`message ${msg.user_id === userId ? 'own' : ''}`}>
-            <span className="user">{msg.user_id === userId ? 'Me' : 'Others'}:</span>
+          <div key={msg.id} className={`message ${msg.user_id === userId ? 'own' : 'other'}`}>
+            <span className="user-name">{msg.user_id === userId ? 'Me' : msg.username}</span>
             <span className="content">{msg.content}</span>
           </div>
         ))}
